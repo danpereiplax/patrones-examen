@@ -10,7 +10,7 @@ public class TestDescuentos {
         Producto taladro = new Producto("Taladro C", "taladros percutores", new BigDecimal("60000"));
         Producto martillo = new Producto("Martillo", "otros", new BigDecimal("50000"));
 
-        DescuentoService service = new DescuentoService();
+        DescuentoService service = new DescuentoServiceImpl();
 
         System.out.println("=== Pruebas para usuario NORMAL ===");
         System.out.println("Compresor: $" + service.aplicarDescuento(compresor, false));

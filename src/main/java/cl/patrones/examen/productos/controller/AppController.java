@@ -1,6 +1,5 @@
 package cl.patrones.examen.productos.controller;
 
-import cl.patrones.examen.productos.domain.Producto;
 import cl.patrones.examen.productos.service.ProductoService;
 import cl.patrones.examen.descuentos.DescuentoService;
 import org.springframework.security.core.GrantedAuthority;
@@ -25,31 +24,41 @@ public class AppController {
         this.descuentoService = descuentoService;
     }
 
-    @GetMapping("/")
-    public String inicio(Model model) {
-        // Verifica si el usuario tiene el rol de EMPLEADO
-        final boolean esEmpleado;
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof UserDetails userDetails) {
-            esEmpleado = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .anyMatch(role -> role.equals("ROLE_EMPLEADO"));
-        } else {
-            esEmpleado = false;
-        }
+   @GetMapping("/")
+public String inicio(Model model) {
+    final boolean esEmpleado;
 
-        // Se obtienen los productos sin necesidad de cast
-        List<? extends Producto> productos = productoService.getProductos();
-
-        // Aplica descuentos y arma nueva lista con precios finales
-        List<Producto> productosConDescuento = productos.stream().map(p -> {
-            Producto dto = new Producto(p.getNombre(), p.getCategoria(), p.getPrecio(), p.getImagen());
-            BigDecimal descuento = descuentoService.aplicarDescuento(p, esEmpleado);
-            dto.setPrecioFinal(p.getPrecio().subtract(descuento));
-            return dto;
-        }).collect(Collectors.toList());
-
-        model.addAttribute("productos", productosConDescuento);
-        return "inicio";
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (principal instanceof UserDetails userDetails) {
+        esEmpleado = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_EMPLEADO"));
+    } else {
+        esEmpleado = false;
     }
+
+    var productosOriginales = productoService.getProductos();
+
+    List<cl.patrones.examen.descuentos.Producto> productosConDescuento = productosOriginales.stream().map(p -> {
+    String nombre = p.getNombre();
+    String categoria = p.getCategoria().getNombre(); // ← CORREGIDO
+    BigDecimal precio = BigDecimal.valueOf(p.getPrecioLista()); // ← conversión segura
+
+    String imagen = p.getImagen();
+
+    cl.patrones.examen.descuentos.Producto dto =
+        new cl.patrones.examen.descuentos.Producto(nombre, categoria, precio, null, imagen);
+
+    BigDecimal descuento = descuentoService.aplicarDescuento(dto, esEmpleado);
+    dto.setPrecioFinal(precio.subtract(descuento));
+    return dto;
+}).collect(Collectors.toList());
+
+
+    model.addAttribute("productos", productosConDescuento);
+    return "inicio";
 }
+
+}
+
+
