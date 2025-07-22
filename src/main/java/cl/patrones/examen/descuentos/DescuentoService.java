@@ -7,7 +7,9 @@ import java.time.LocalDate;
 public class DescuentoService {
 
     public BigDecimal aplicarDescuento(Producto producto, boolean esEmpleado) {
-        DescuentoStrategy strategy = obtenerEstrategiaDelDia();
+        DescuentoStrategy baseStrategy = obtenerEstrategiaDelDia();
+
+        DescuentoStrategy strategy = new EmpleadoDescuentoDecorator(baseStrategy);
         return strategy.calcular(producto, esEmpleado);
     }
 
